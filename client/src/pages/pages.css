@@ -1,0 +1,67 @@
+/* ═══════════════════════════════════════════════════════
+   Page-level Styles
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── Stats Grid ───────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon--primary { background: hsla(230, 80%, 62%, 0.15); color: var(--primary); }
+.stat-icon--secondary { background: hsla(280, 65%, 60%, 0.15); color: var(--secondary); }
+.stat-icon--accent { background: hsla(160, 70%, 50%, 0.15); color: var(--accent); }
+.stat-icon--success { background: hsla(145, 65%, 48%, 0.15); color: var(--success); }
+
+.stat-value {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  font-family: var(--font-heading);
+}
+
+.stat-label {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* ─── Bot Grid ─────────────────────────────────────── */
+.bot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-4);
+}
+
+.bot-card {
+  position: relative;
+}
+
+/* ─── Empty State ──────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12);
+  text-align: center;
+}
+
+.empty-state__icon {
+  opacity: 0.3;
+  margin-bottom: var(--space-4);
+}
+
+.empty-state__text {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+}
