@@ -20,7 +20,7 @@ export const authApi = {
       {
         email: payload.email,
         password: payload.password,
-        name: payload.displayName,
+        displayName: payload.displayName,
         role: payload.role,
       }
     ),
