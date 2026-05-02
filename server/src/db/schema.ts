@@ -49,7 +49,7 @@ export const messageRoleEnum = pgEnum("message_role", [
 export const users = pgTable(
   "users",
   {
-    id: text("id").primaryKey(),
+    id: uuid("id").defaultRandom().primaryKey(),
     name: text("name").notNull(),
     email: varchar("email", { length: 255 }).notNull().unique(),
     role: userRoleEnum("role").notNull().default("student"),
@@ -79,10 +79,10 @@ export const parentChildren = pgTable(
   "parent_children",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    parentId: text("parent_id")
+    parentId: uuid("parent_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    childId: text("child_id")
+    childId: uuid("child_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -113,7 +113,7 @@ export const chatbots = pgTable(
   "chatbots",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    teacherId: text("teacher_id")
+    teacherId: uuid("teacher_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 200 }).notNull(),
@@ -191,7 +191,7 @@ export const chatSessions = pgTable(
     chatbotId: uuid("chatbot_id")
       .notNull()
       .references(() => chatbots.id, { onDelete: "cascade" }),
-    studentId: text("student_id")
+    studentId: uuid("student_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     startedAt: timestamp("started_at", { withTimezone: true })
@@ -263,7 +263,7 @@ export const dailyUsage = pgTable(
   "daily_usage",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    studentId: text("student_id")
+    studentId: uuid("student_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     chatbotId: uuid("chatbot_id")
@@ -298,7 +298,7 @@ export const studentProgress = pgTable(
   "student_progress",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    studentId: text("student_id")
+    studentId: uuid("student_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     chatbotId: uuid("chatbot_id")
@@ -338,7 +338,7 @@ export const studentInsights = pgTable(
     chatbotId: uuid("chatbot_id")
       .notNull()
       .references(() => chatbots.id, { onDelete: "cascade" }),
-    studentId: text("student_id")
+    studentId: uuid("student_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     topic: varchar("topic", { length: 200 }).notNull(),
@@ -374,8 +374,8 @@ export const studentInsightsRelations = relations(
 // here so Drizzle is aware of them for type-safety
 
 export const sessions = pgTable("sessions", {
-  id: text("id").primaryKey(),
-  userId: text("user_id")
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   token: text("token").notNull().unique(),
@@ -391,8 +391,8 @@ export const sessions = pgTable("sessions", {
 });
 
 export const accounts = pgTable("accounts", {
-  id: text("id").primaryKey(),
-  userId: text("user_id")
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   accountId: text("account_id").notNull(),
@@ -417,7 +417,7 @@ export const accounts = pgTable("accounts", {
 });
 
 export const verifications = pgTable("verifications", {
-  id: text("id").primaryKey(),
+  id: uuid("id").defaultRandom().primaryKey(),
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),

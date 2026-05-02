@@ -9,6 +9,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../db/index.js";
 import { env } from "../config/env.js";
+import { randomUUID } from "node:crypto";
 import * as schema from "../db/schema.js";
 
 export const auth = betterAuth({
@@ -21,6 +22,9 @@ export const auth = betterAuth({
       verification: schema.verifications,
     },
   }),
+  advanced: {
+    generateId: () => randomUUID(),
+  },
 
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
