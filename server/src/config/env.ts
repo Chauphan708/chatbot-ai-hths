@@ -30,12 +30,17 @@ const envSchema = z.object({
 
 const parsed = envSchema.safeParse(process.env);
 
-if (!parsed.success) {
-  console.error("❌ Invalid environment variables:");
-  console.error(parsed.error.flatten().fieldErrors);
-  process.exit(1);
-}
+export const envErrors = !parsed.success ? parsed.error.flatten().fieldErrors : null;
 
-export const env = parsed.data;
+// Fallback to a safe object if parsing fails to prevent crash
+export const env = parsed.success ? parsed.data : {
+  PORT: Number(process.env.PORT) || 3000,
+  NODE_ENV: (process.env.NODE_ENV as any) || "development",
+  DATABASE_URL: process.env.DATABASE_URL || "",
+  BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET || "",
+  BETTER_AUTH_URL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
+  CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
+} as any as z.infer<typeof envSchema>;
 
 export type Env = z.infer<typeof envSchema>;

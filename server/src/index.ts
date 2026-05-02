@@ -1,18 +1,12 @@
 /**
  * AI Chatbot Hỗ Trợ Tự Học — Server Entry Point
- *
- * Express server with:
- * - Better Auth (3 roles: teacher, parent, student)
- * - Drizzle ORM + Neon PostgreSQL
- * - Rate limiting, CORS, Helmet security
- * - Teacher, Parent, Chat routes
  */
 
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { toNodeHandler } from "better-auth/node";
-import { env } from "./config/env.js";
+import { env, envErrors } from "./config/env.js";
 import { auth } from "./auth/index.js";
 import { teacherRouter, parentRouter, chatRouter, trainingRouter } from "./routes/index.js";
 import { errorHandler, globalLimiter, authLimiter } from "./middleware/index.js";
@@ -22,8 +16,6 @@ const app = express();
 // ─── Security ───────────────────────────────────
 app.use(helmet());
 
-// Clean CLIENT_URL (remove trailing slash)
-const allowedOrigin = env.CLIENT_URL.endsWith("/")
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -57,7 +49,6 @@ app.use(
 app.use(globalLimiter);
 
 // ─── Better Auth Handler ────────────────────────
-// Mount BEFORE Express routes and body parser — Better Auth handles /api/auth/*
 app.all("/api/auth/*", authLimiter, toNodeHandler(auth));
 
 // ─── Body Parsing ───────────────────────────────
@@ -75,10 +66,13 @@ app.get("/api/health", (_req, res) => {
 
 app.get("/api/debug-env", (_req, res) => {
   res.json({
-    CLIENT_URL: env.CLIENT_URL ? `${env.CLIENT_URL.slice(0, 15)}...` : "not set",
-    BETTER_AUTH_URL: env.BETTER_AUTH_URL ? `${env.BETTER_AUTH_URL.slice(0, 15)}...` : "not set",
-    NODE_ENV: env.NODE_ENV,
-    PORT: env.PORT,
+    isValid: envErrors === null,
+    errors: envErrors,
+    values: {
+      CLIENT_URL: env.CLIENT_URL ? `${env.CLIENT_URL.slice(0, 15)}...` : "not set",
+      BETTER_AUTH_URL: env.BETTER_AUTH_URL ? `${env.BETTER_AUTH_URL.slice(0, 15)}...` : "not set",
+      NODE_ENV: env.NODE_ENV,
+    }
   });
 });
 
