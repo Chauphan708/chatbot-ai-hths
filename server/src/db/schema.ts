@@ -52,7 +52,7 @@ export const users = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     name: text("name").notNull(),
     email: varchar("email", { length: 255 }).notNull().unique(),
-    role: userRoleEnum("role").notNull().default("student"),
+    role: text("role").notNull().default("student"),
     image: text("image"),
     emailVerified: boolean("email_verified").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
