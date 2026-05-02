@@ -12,6 +12,7 @@ import {
   chatSessions,
   chatMessages,
   studentProgress,
+  accounts,
 } from "../db/schema.js";
 import {
   requireAuth,
@@ -32,7 +33,7 @@ router.use(requireAuth, requireRole("parent"));
 // ─── Validation Schemas ─────────────────────────
 
 const createChildSchema = z.object({
-  displayName: z.string().min(1).max(100),
+  name: z.string().min(1).max(100),
   email: z.string().email(),
   password: z.string().min(8).max(128),
 });
@@ -49,8 +50,8 @@ router.get(
         child: {
           id: users.id,
           email: users.email,
-          displayName: users.displayName,
-          avatarUrl: users.avatarUrl,
+          name: users.name,
+          image: users.image,
           createdAt: users.createdAt,
         },
       })
@@ -67,7 +68,7 @@ router.post(
   "/children",
   validateBody(createChildSchema),
   asyncHandler(async (req, res) => {
-    const { displayName, email, password } = req.body;
+    const { name, email, password } = req.body;
 
     // Check if email already exists
     const [existing] = await db
@@ -79,22 +80,28 @@ router.post(
       throw new AppError(409, "Email đã được sử dụng");
     }
 
-    // Hash password (Better Auth handles this internally during sign-up,
-    // but for parent-created accounts we do it manually)
+    // Hash password
     const bcrypt = await import("better-auth/crypto");
     const hashedPassword = await bcrypt.hashPassword(password);
 
-    // Create student account
+    // Create student account (Users table)
     const [child] = await db
       .insert(users)
       .values({
         email,
-        passwordHash: hashedPassword,
         role: "student",
-        displayName,
-        emailVerified: true, // Parent-created accounts are auto-verified
+        name,
+        emailVerified: true, 
       })
       .returning();
+
+    // Create account record (Accounts table for Better Auth compatibility)
+    await db.insert(accounts).values({
+      userId: child.id,
+      accountId: email,
+      providerId: "email",
+      password: hashedPassword,
+    });
 
     // Link parent → child
     await db.insert(parentChildren).values({
@@ -107,9 +114,9 @@ router.post(
       data: {
         id: child.id,
         email: child.email,
-        displayName: child.displayName,
+        name: child.name,
       },
-      message: `Đã tạo tài khoản cho ${displayName}`,
+      message: `Đã tạo tài khoản cho ${name}`,
     });
   })
 );

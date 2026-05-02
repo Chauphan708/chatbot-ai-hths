@@ -50,11 +50,10 @@ export const users = pgTable(
   "users",
   {
     id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
     email: varchar("email", { length: 255 }).notNull().unique(),
-    passwordHash: text("password_hash").notNull(),
     role: userRoleEnum("role").notNull().default("student"),
-    displayName: varchar("display_name", { length: 100 }).notNull(),
-    avatarUrl: text("avatar_url"),
+    image: text("image"),
     emailVerified: boolean("email_verified").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

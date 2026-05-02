@@ -131,10 +131,10 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         {!collapsed && user && (
           <div className="sidebar__user">
             <div className="sidebar__avatar">
-              {user.displayName.charAt(0).toUpperCase()}
+              {user.name.charAt(0).toUpperCase()}
             </div>
             <div className="sidebar__user-info">
-              <span className="sidebar__user-name">{user.displayName}</span>
+              <span className="sidebar__user-name">{user.name}</span>
               <span className="sidebar__user-role">
                 {user.role === "teacher" ? "Giáo viên" : "Phụ huynh"}
               </span>

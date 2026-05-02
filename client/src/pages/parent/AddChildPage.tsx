@@ -13,7 +13,7 @@ export function AddChildPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    displayName: "",
+    name: "",
     email: "",
     password: "",
   });
@@ -47,8 +47,8 @@ export function AddChildPage() {
         <form className="auth-card__form" onSubmit={handleSubmit}>
           <Input
             label="Họ tên con"
-            value={form.displayName}
-            onChange={(e) => setForm({ ...form, displayName: e.target.value })}
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
             placeholder="Nguyễn Văn Bé"
             icon={<User size={18} />}
             required

@@ -48,12 +48,6 @@ export const auth = betterAuth({
         defaultValue: "student",
         input: true,
       },
-      displayName: {
-        type: "string",
-        required: true,
-        input: true,
-        fieldName: "displayName",
-      },
     },
   },
 

@@ -45,7 +45,7 @@ export function StudentInsightsList({ insights }: StudentInsightsProps) {
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600, fontSize: "var(--text-sm)" }}>
-                {insight.student?.displayName || "Học sinh"}
+                {insight.student?.name || "Học sinh"}
               </div>
               <div style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>
                 {insight.topic} · {insight.errorType || "Cần hỗ trợ"}
@@ -110,7 +110,7 @@ export function ChatLogViewer({ sessions, onViewSession }: ChatLogViewerProps) {
 
 interface LeaderboardEntry {
   studentId: string;
-  displayName: string;
+  name: string;
   totalXp: number;
   level: number;
   streakDays: number;
@@ -156,7 +156,7 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps): ReactNode 
                 {i < 3 ? medals[i] : i + 1}
               </td>
               <td style={{ padding: "var(--space-3)", fontWeight: 500 }}>
-                {entry.displayName}
+                {entry.name}
               </td>
               <td style={{ padding: "var(--space-3)", textAlign: "right", color: "var(--warning)", fontWeight: 600 }}>
                 {entry.totalXp.toLocaleString()}

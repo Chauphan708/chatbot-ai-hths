@@ -67,10 +67,10 @@ export function ParentDashboard() {
             <GlassCard key={child.id} padding="md" hover>
               <div className="flex items-center gap-4" style={{ marginBottom: "var(--space-3)" }}>
                 <div className="sidebar__avatar">
-                  {child.displayName.charAt(0).toUpperCase()}
+                  {child.name.charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <h3 style={{ fontWeight: 600 }}>{child.displayName}</h3>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ fontWeight: 600 }}>{child.name}</h3>
                   <p style={{ color: "var(--text-muted)", fontSize: "var(--text-sm)" }}>
                     {child.email}
                   </p>

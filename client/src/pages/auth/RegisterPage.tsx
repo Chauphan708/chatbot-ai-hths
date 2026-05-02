@@ -21,7 +21,7 @@ export function RegisterPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
+  const [name, setName] = useState("");
   const [role, setRole] = useState<UserRole>("teacher");
   const [submitting, setSubmitting] = useState(false);
 
@@ -35,7 +35,7 @@ export function RegisterPage() {
     clearError();
     setSubmitting(true);
     try {
-      await register({ email, password, displayName, role });
+      await register({ email, password, name, role });
       const dashboardMap = { teacher: "/teacher", parent: "/parent", student: "/student" };
       navigate(dashboardMap[role]);
     } catch {
@@ -82,8 +82,8 @@ export function RegisterPage() {
           <Input
             label="Họ tên"
             type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             placeholder="Nguyễn Văn A"
             icon={<User size={18} />}
             required

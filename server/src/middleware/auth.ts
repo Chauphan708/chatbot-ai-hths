@@ -14,7 +14,7 @@ declare global {
         id: string;
         email: string;
         role: "teacher" | "parent" | "student";
-        displayName: string;
+        name: string;
       };
       session?: {
         id: string;
@@ -51,7 +51,7 @@ export async function requireAuth(
       id: session.user.id,
       email: session.user.email,
       role: (session.user as any).role ?? "student",
-      displayName: (session.user as any).displayName ?? session.user.name ?? "",
+      name: session.user.name,
     };
     req.session = {
       id: session.session.id,

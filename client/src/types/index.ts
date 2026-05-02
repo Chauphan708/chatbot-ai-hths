@@ -11,8 +11,8 @@ export interface User {
   id: string;
   email: string;
   role: UserRole;
-  displayName: string;
-  avatarUrl?: string | null;
+  name: string;
+  image?: string | null;
   emailVerified: boolean;
   createdAt: string;
 }
@@ -30,7 +30,7 @@ export interface LoginPayload {
 export interface RegisterPayload {
   email: string;
   password: string;
-  displayName: string;
+  name: string;
   role: UserRole;
 }
 
@@ -163,7 +163,7 @@ export interface StudentInsight {
   needsSupport: boolean;
   lastOccurred?: string | null;
   notes?: string | null;
-  student?: { displayName: string; email: string };
+  student?: { name: string; email: string };
 }
 
 export interface AnalyticsData {
@@ -173,7 +173,7 @@ export interface AnalyticsData {
   insightsNeedingSupport: StudentInsight[];
   leaderboard: Array<{
     studentId: string;
-    displayName: string;
+    name: string;
     totalXp: number;
     level: number;
     streakDays: number;
@@ -184,7 +184,7 @@ export interface AnalyticsData {
 
 export interface ChildInfo {
   id: string;
-  displayName: string;
+  name: string;
   email: string;
   createdAt: string;
 }

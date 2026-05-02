@@ -21,7 +21,7 @@ export const parentApi = {
   addChild: (data: {
     email: string;
     password: string;
-    displayName: string;
+    name: string;
   }) => api.post<ApiResponse<ChildInfo>>(`${BASE}/children`, data),
 
   /** Get child chat history (sessions) */

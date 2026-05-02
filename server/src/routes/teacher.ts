@@ -182,7 +182,7 @@ router.get(
     const insights = await db
       .select({
         insight: studentInsights,
-        studentName: users.displayName,
+        studentName: users.name,
         studentEmail: users.email,
       })
       .from(studentInsights)
@@ -214,7 +214,7 @@ router.get(
       const inClause = studentIds.map(id => `'${id}'`).join(',');
       const topStudents = await db.execute(sql`
         SELECT 
-          u.display_name as "studentName", 
+          u.name as "studentName", 
           sp.total_xp as "totalXp", 
           sp.level, 
           sp.streak_days as "streakDays"
@@ -262,7 +262,7 @@ router.get(
     const sessions = await db
       .select({
         session: chatSessions,
-        studentName: users.displayName,
+        studentName: users.name,
       })
       .from(chatSessions)
       .innerJoin(users, eq(chatSessions.studentId, users.id))
