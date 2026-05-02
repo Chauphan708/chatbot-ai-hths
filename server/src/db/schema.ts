@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 /**
  * Database Schema — AI Chatbot Hỗ Trợ Tự Học
  *
@@ -15,7 +16,6 @@
 
 import {
   pgTable,
-  uuid,
   text,
   varchar,
   boolean,
@@ -49,7 +49,7 @@ export const messageRoleEnum = pgEnum("message_role", [
 export const users = pgTable(
   "users",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
     name: text("name").notNull(),
     email: varchar("email", { length: 255 }).notNull().unique(),
     role: text("role").notNull().default("student"),
@@ -78,11 +78,11 @@ export const usersRelations = relations(users, ({ many }) => ({
 export const parentChildren = pgTable(
   "parent_children",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
-    parentId: uuid("parent_id")
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    parentId: text("parent_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    childId: uuid("child_id")
+    childId: text("child_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -112,8 +112,8 @@ export const parentChildrenRelations = relations(parentChildren, ({ one }) => ({
 export const chatbots = pgTable(
   "chatbots",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
-    teacherId: uuid("teacher_id")
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    teacherId: text("teacher_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 200 }).notNull(),
@@ -124,7 +124,7 @@ export const chatbots = pgTable(
     scaffoldingDefault: integer("scaffolding_default").notNull().default(1),
     enableSixHats: boolean("enable_six_hats").notNull().default(false),
     shareCode: varchar("share_code", { length: 20 }).unique(),
-    cloneFromId: uuid("clone_from_id"),
+    cloneFromId: text("clone_from_id"),
     maxDailyChats: integer("max_daily_chats").notNull().default(10),
     isPublic: boolean("is_public").notNull().default(false),
     isActive: boolean("is_active").notNull().default(true),
@@ -157,8 +157,8 @@ export const chatbotsRelations = relations(chatbots, ({ one, many }) => ({
 export const trainingData = pgTable(
   "training_data",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
-    chatbotId: uuid("chatbot_id")
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    chatbotId: text("chatbot_id")
       .notNull()
       .references(() => chatbots.id, { onDelete: "cascade" }),
     title: varchar("title", { length: 300 }).notNull(),
@@ -187,11 +187,11 @@ export const trainingDataRelations = relations(trainingData, ({ one }) => ({
 export const chatSessions = pgTable(
   "chat_sessions",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
-    chatbotId: uuid("chatbot_id")
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    chatbotId: text("chatbot_id")
       .notNull()
       .references(() => chatbots.id, { onDelete: "cascade" }),
-    studentId: uuid("student_id")
+    studentId: text("student_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     startedAt: timestamp("started_at", { withTimezone: true })
@@ -230,8 +230,8 @@ export const chatSessionsRelations = relations(
 export const chatMessages = pgTable(
   "chat_messages",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
-    sessionId: uuid("session_id")
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    sessionId: text("session_id")
       .notNull()
       .references(() => chatSessions.id, { onDelete: "cascade" }),
     role: messageRoleEnum("role").notNull(),
@@ -262,11 +262,11 @@ export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
 export const dailyUsage = pgTable(
   "daily_usage",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
-    studentId: uuid("student_id")
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    studentId: text("student_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    chatbotId: uuid("chatbot_id")
+    chatbotId: text("chatbot_id")
       .notNull()
       .references(() => chatbots.id, { onDelete: "cascade" }),
     date: date("date").notNull(),
@@ -297,11 +297,11 @@ export const dailyUsageRelations = relations(dailyUsage, ({ one }) => ({
 export const studentProgress = pgTable(
   "student_progress",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
-    studentId: uuid("student_id")
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    studentId: text("student_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    chatbotId: uuid("chatbot_id")
+    chatbotId: text("chatbot_id")
       .notNull()
       .references(() => chatbots.id, { onDelete: "cascade" }),
     totalXp: integer("total_xp").notNull().default(0),
@@ -334,11 +334,11 @@ export const studentProgressRelations = relations(
 export const studentInsights = pgTable(
   "student_insights",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
-    chatbotId: uuid("chatbot_id")
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    chatbotId: text("chatbot_id")
       .notNull()
       .references(() => chatbots.id, { onDelete: "cascade" }),
-    studentId: uuid("student_id")
+    studentId: text("student_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     topic: varchar("topic", { length: 200 }).notNull(),
@@ -374,8 +374,8 @@ export const studentInsightsRelations = relations(
 // here so Drizzle is aware of them for type-safety
 
 export const sessions = pgTable("sessions", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   token: text("token").notNull().unique(),
@@ -391,8 +391,8 @@ export const sessions = pgTable("sessions", {
 });
 
 export const accounts = pgTable("accounts", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   accountId: text("account_id").notNull(),
@@ -417,7 +417,7 @@ export const accounts = pgTable("accounts", {
 });
 
 export const verifications = pgTable("verifications", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
