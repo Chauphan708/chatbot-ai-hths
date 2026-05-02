@@ -24,18 +24,24 @@ app.use(helmet());
 
 // Clean CLIENT_URL (remove trailing slash)
 const allowedOrigin = env.CLIENT_URL.endsWith("/")
-  ? env.CLIENT_URL.slice(0, -1)
-  : env.CLIENT_URL;
-
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow if origin matches CLIENT_URL or is localhost
+      // Clean CLIENT_URL
+      const allowedOrigin = env.CLIENT_URL.endsWith("/")
+        ? env.CLIENT_URL.slice(0, -1)
+        : env.CLIENT_URL;
+
+      // Allow if:
+      // 1. No origin (server-to-server or local script)
+      // 2. Exact match with CLIENT_URL
+      // 3. Any Vercel deployment domain
+      // 4. Localhost
       if (
         !origin ||
         origin === allowedOrigin ||
-        origin === "http://localhost:5173" ||
-        origin === "http://localhost:3000"
+        origin.endsWith(".vercel.app") ||
+        origin.includes("localhost")
       ) {
         callback(null, true);
       } else {
@@ -58,13 +64,21 @@ app.all("/api/auth/*", authLimiter, toNodeHandler(auth));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// ─── Health Check ───────────────────────────────
+// ─── Health & Debug Check ───────────────────────
 app.get("/api/health", (_req, res) => {
   res.json({
     success: true,
     status: "ok",
     timestamp: new Date().toISOString(),
-    version: "1.0.0",
+  });
+});
+
+app.get("/api/debug-env", (_req, res) => {
+  res.json({
+    CLIENT_URL: env.CLIENT_URL ? `${env.CLIENT_URL.slice(0, 15)}...` : "not set",
+    BETTER_AUTH_URL: env.BETTER_AUTH_URL ? `${env.BETTER_AUTH_URL.slice(0, 15)}...` : "not set",
+    NODE_ENV: env.NODE_ENV,
+    PORT: env.PORT,
   });
 });
 
