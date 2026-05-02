@@ -21,10 +21,31 @@ const app = express();
 
 // ─── Security ───────────────────────────────────
 app.use(helmet());
+
+// Clean CLIENT_URL (remove trailing slash)
+const allowedOrigin = env.CLIENT_URL.endsWith("/")
+  ? env.CLIENT_URL.slice(0, -1)
+  : env.CLIENT_URL;
+
 app.use(
   cors({
-    origin: env.CLIENT_URL,
+    origin: (origin, callback) => {
+      // Allow if origin matches CLIENT_URL or is localhost
+      if (
+        !origin ||
+        origin === allowedOrigin ||
+        origin === "http://localhost:5173" ||
+        origin === "http://localhost:3000"
+      ) {
+        callback(null, true);
+      } else {
+        console.warn(`⚠️ CORS blocked for origin: ${origin}`);
+        callback(null, false);
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
   })
 );
 app.use(globalLimiter);
