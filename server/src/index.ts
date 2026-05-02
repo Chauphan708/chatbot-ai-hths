@@ -29,13 +29,13 @@ app.use(
 );
 app.use(globalLimiter);
 
+// ─── Better Auth Handler ────────────────────────
+// Mount BEFORE Express routes and body parser — Better Auth handles /api/auth/*
+app.all("/api/auth/*", authLimiter, toNodeHandler(auth));
+
 // ─── Body Parsing ───────────────────────────────
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
-
-// ─── Better Auth Handler ────────────────────────
-// Mount BEFORE Express routes — Better Auth handles /api/auth/*
-app.all("/api/auth/*", authLimiter, toNodeHandler(auth));
 
 // ─── Health Check ───────────────────────────────
 app.get("/api/health", (_req, res) => {
