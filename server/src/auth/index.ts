@@ -52,7 +52,12 @@ export const auth = betterAuth({
     },
   },
 
-  trustedOrigins: [env.CLIENT_URL],
+  trustedOrigins: [
+    env.CLIENT_URL,
+    "https://chatbot-ai-hths-client.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000",
+  ],
 });
 
 export type Auth = typeof auth;
