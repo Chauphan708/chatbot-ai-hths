@@ -53,7 +53,7 @@ export const auth = betterAuth({
   },
 
   trustedOrigins: [
-    env.CLIENT_URL,
+    env.CLIENT_URL.endsWith("/") ? env.CLIENT_URL.slice(0, -1) : env.CLIENT_URL,
     "https://chatbot-ai-hths-client.vercel.app",
     "http://localhost:5173",
     "http://localhost:3000",

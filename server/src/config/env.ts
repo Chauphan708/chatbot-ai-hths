@@ -32,13 +32,22 @@ const parsed = envSchema.safeParse(process.env);
 
 export const envErrors = !parsed.success ? parsed.error.flatten().fieldErrors : null;
 
+// Helper to ensure BETTER_AUTH_URL ends with /api/auth
+const normalizeAuthUrl = (url: string) => {
+  const clean = url.endsWith("/") ? url.slice(0, -1) : url;
+  return clean.endsWith("/api/auth") ? clean : `${clean}/api/auth`;
+};
+
 // Fallback to a safe object if parsing fails to prevent crash
-export const env = parsed.success ? parsed.data : {
+export const env = parsed.success ? {
+  ...parsed.data,
+  BETTER_AUTH_URL: normalizeAuthUrl(parsed.data.BETTER_AUTH_URL),
+} : {
   PORT: Number(process.env.PORT) || 3000,
   NODE_ENV: (process.env.NODE_ENV as any) || "development",
   DATABASE_URL: process.env.DATABASE_URL || "",
   BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET || "",
-  BETTER_AUTH_URL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  BETTER_AUTH_URL: normalizeAuthUrl(process.env.BETTER_AUTH_URL || "http://localhost:3000"),
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
   CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
 } as any as z.infer<typeof envSchema>;
