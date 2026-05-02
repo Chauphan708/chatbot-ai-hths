@@ -22,9 +22,6 @@ export const auth = betterAuth({
       verification: schema.verifications,
     },
   }),
-  advanced: {
-    generateId: () => randomUUID(),
-  },
 
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
