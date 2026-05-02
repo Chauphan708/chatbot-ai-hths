@@ -16,16 +16,16 @@ const app = express();
 // ─── Security ───────────────────────────────────
 app.use(helmet());
 
+// Clean CLIENT_URL helper
+const getCleanOrigin = (url: string) => url.endsWith("/") ? url.slice(0, -1) : url;
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Clean CLIENT_URL
-      const allowedOrigin = env.CLIENT_URL.endsWith("/")
-        ? env.CLIENT_URL.slice(0, -1)
-        : env.CLIENT_URL;
-
+      const allowedOrigin = getCleanOrigin(env.CLIENT_URL);
+      
       // Allow if:
-      // 1. No origin (server-to-server or local script)
+      // 1. No origin (server-to-server)
       // 2. Exact match with CLIENT_URL
       // 3. Any Vercel deployment domain
       // 4. Localhost
@@ -33,7 +33,8 @@ app.use(
         !origin ||
         origin === allowedOrigin ||
         origin.endsWith(".vercel.app") ||
-        origin.includes("localhost")
+        origin.includes("localhost") ||
+        origin === "https://chatbot-ai-hths-client.vercel.app"
       ) {
         callback(null, true);
       } else {
@@ -46,6 +47,10 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
   })
 );
+
+// Explicitly handle OPTIONS for all routes
+app.options("*", cors());
+
 app.use(globalLimiter);
 
 // ─── Better Auth Handler ────────────────────────
