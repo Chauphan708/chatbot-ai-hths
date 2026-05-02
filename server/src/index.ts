@@ -21,27 +21,7 @@ const getCleanOrigin = (url: string) => url.endsWith("/") ? url.slice(0, -1) : u
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      const allowedOrigin = getCleanOrigin(env.CLIENT_URL);
-      
-      // Allow if:
-      // 1. No origin (server-to-server)
-      // 2. Exact match with CLIENT_URL
-      // 3. Any Vercel deployment domain
-      // 4. Localhost
-      if (
-        !origin ||
-        origin === allowedOrigin ||
-        origin.endsWith(".vercel.app") ||
-        origin.includes("localhost") ||
-        origin === "https://chatbot-ai-hths-client.vercel.app"
-      ) {
-        callback(null, true);
-      } else {
-        console.warn(`⚠️ CORS blocked for origin: ${origin}`);
-        callback(null, false);
-      }
-    },
+    origin: true, // Reflect the request origin
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],

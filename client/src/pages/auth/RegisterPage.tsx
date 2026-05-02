@@ -118,6 +118,9 @@ export function RegisterPage() {
         <div className="auth-card__footer">
           Đã có tài khoản?{" "}
           <Link to="/login">Đăng nhập</Link>
+          <div style={{ marginTop: '20px', fontSize: '0.7rem', opacity: 0.5, textAlign: 'center' }}>
+            Debug: API={import.meta.env.VITE_API_URL || "http://localhost:3000"}
+          </div>
         </div>
       </GlassCard>
     </div>
