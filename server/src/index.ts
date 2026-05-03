@@ -13,54 +13,31 @@ import { errorHandler, globalLimiter, authLimiter } from "./middleware/index.js"
 
 const app = express();
 
-// ─── Security ───────────────────────────────────
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
+// ─── CRITICAL: Global CORS & Preflight ──────────
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  // Broad allow for Vercel and Localhost for robustness
+  if (origin && (origin.includes("vercel.app") || origin.includes("localhost"))) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
+  
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Cookie, x-better-auth-origin, better-auth-origin");
+  
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
-// Allowed Origins List
+// Allowed Origins (Legacy check for specific cases)
 const allowedOrigins = [
   env.CLIENT_URL,
   "https://chatbot-ai-hths-client.vercel.app",
   "http://localhost:5173",
   "http://localhost:3000",
 ].map(url => url.endsWith("/") ? url.slice(0, -1) : url);
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl)
-      if (!origin) return callback(null, true);
-      
-      const cleanOrigin = origin.endsWith("/") ? origin.slice(0, -1) : origin;
-      
-      if (allowedOrigins.includes(cleanOrigin)) {
-        callback(null, true);
-      } else {
-        console.warn(`[CORS] Origin rejected: ${origin}`);
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cookie", "x-better-auth-origin"],
-    exposedHeaders: ["set-cookie"],
-  })
-);
-
-// Explicitly handle OPTIONS for all routes (Preflight)
-app.options("*", (req, res) => {
-  const origin = req.headers.origin;
-  const cleanOrigin = origin?.endsWith("/") ? origin.slice(0, -1) : origin;
-  
-  if (origin && allowedOrigins.includes(cleanOrigin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Cookie, x-better-auth-origin");
-  }
-  res.sendStatus(204);
-});
 
 app.use(globalLimiter);
 
