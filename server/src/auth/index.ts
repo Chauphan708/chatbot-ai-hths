@@ -7,9 +7,9 @@
 
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { bearer } from "better-auth/plugins";
 import { db } from "../db/index.js";
 import { env } from "../config/env.js";
-import { randomUUID } from "node:crypto";
 import * as schema from "../db/schema.js";
 
 export const auth = betterAuth({
@@ -26,6 +26,10 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
 
+  plugins: [
+    bearer()
+  ],
+
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
@@ -39,6 +43,11 @@ export const auth = betterAuth({
       enabled: true,
       maxAge: 60 * 5, // 5 minutes
     },
+    // Ensure cookies work across subdomains/different domains on Vercel
+    cookieOptions: {
+      secure: true,
+      sameSite: "none",
+    }
   },
 
   user: {
