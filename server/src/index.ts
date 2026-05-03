@@ -89,7 +89,24 @@ app.use((req, res, next) => {
 });
 
 // ─── Better Auth Handler ────────────────────────
-app.all("/api/auth/*", authLimiter, toNodeHandler(auth));
+app.all("/api/auth/*", (req, res) => {
+  // Ensure CORS headers are present even if previous middleware missed them
+  const origin = req.headers.origin;
+  if (origin) {
+    const cleanOrigin = origin.endsWith("/") ? origin.slice(0, -1) : origin;
+    if (allowedOrigins.includes(cleanOrigin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Cookie, x-better-auth-origin");
+    }
+  }
+  
+  // Skip toNodeHandler for OPTIONS as we already handled it above with app.options("*")
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  
+  return toNodeHandler(auth)(req, res);
+});
 
 // ─── Body Parsing ───────────────────────────────
 app.use(express.json({ limit: "1mb" }));
