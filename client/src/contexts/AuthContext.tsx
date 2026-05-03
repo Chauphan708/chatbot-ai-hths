@@ -90,8 +90,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const checkSession = async () => {
       try {
         const res = await authApi.getSession();
-        if (res.data?.user) {
-          dispatch({ type: "SET_USER", payload: res.data.user });
+        // Support both wrapped { data: { user } } and raw Better Auth { user }
+        const user = res.data?.user || (res as any).user;
+        
+        if (user) {
+          dispatch({ type: "SET_USER", payload: user });
         } else {
           dispatch({ type: "LOGOUT" });
         }
@@ -106,11 +109,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "SET_LOADING" });
     try {
       const res = await authApi.login(payload);
-      if (res.data?.token) {
-        localStorage.setItem("auth_token", res.data.token);
+      
+      // Support both wrapped and raw Better Auth responses
+      const userData = res.data?.user || (res as any).user;
+      const token = res.data?.token || (res as any).token || (res as any).session?.token;
+
+      if (token) {
+        localStorage.setItem("auth_token", token);
       }
-      if (res.data?.user) {
-        dispatch({ type: "SET_USER", payload: res.data.user });
+      
+      if (userData) {
+        dispatch({ type: "SET_USER", payload: userData });
       } else {
         dispatch({ type: "SET_ERROR", payload: "Đăng nhập thất bại" });
       }
@@ -127,11 +136,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "SET_LOADING" });
     try {
       const res = await authApi.register(payload);
-      if (res.data?.token) {
-        localStorage.setItem("auth_token", res.data.token);
+      
+      // Support both wrapped and raw Better Auth responses
+      const userData = res.data?.user || (res as any).user;
+      const token = res.data?.token || (res as any).token || (res as any).session?.token;
+
+      if (token) {
+        localStorage.setItem("auth_token", token);
       }
-      if (res.data?.user) {
-        dispatch({ type: "SET_USER", payload: res.data.user });
+      
+      if (userData) {
+        dispatch({ type: "SET_USER", payload: userData });
       } else {
         dispatch({ type: "SET_ERROR", payload: "Đăng ký thất bại" });
       }
