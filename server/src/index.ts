@@ -14,24 +14,63 @@ import { errorHandler, globalLimiter, authLimiter } from "./middleware/index.js"
 const app = express();
 
 // ─── Security ───────────────────────────────────
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
-// Clean CLIENT_URL helper
-const getCleanOrigin = (url: string) => url.endsWith("/") ? url.slice(0, -1) : url;
+// Allowed Origins List
+const allowedOrigins = [
+  env.CLIENT_URL,
+  "https://chatbot-ai-hths-client.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+].map(url => url.endsWith("/") ? url.slice(0, -1) : url);
 
 app.use(
   cors({
-    origin: true, // Reflect the request origin
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      
+      const cleanOrigin = origin.endsWith("/") ? origin.slice(0, -1) : origin;
+      
+      if (allowedOrigins.includes(cleanOrigin)) {
+        callback(null, true);
+      } else {
+        console.warn(`[CORS] Origin rejected: ${origin}`);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie", "x-better-auth-origin"],
+    exposedHeaders: ["set-cookie"],
   })
 );
 
-// Explicitly handle OPTIONS for all routes
-app.options("*", cors());
+// Explicitly handle OPTIONS for all routes (Preflight)
+app.options("*", (req, res) => {
+  const origin = req.headers.origin;
+  const cleanOrigin = origin?.endsWith("/") ? origin.slice(0, -1) : origin;
+  
+  if (origin && allowedOrigins.includes(cleanOrigin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Cookie, x-better-auth-origin");
+  }
+  res.sendStatus(204);
+});
 
 app.use(globalLimiter);
+
+// ─── Request Logger ─────────────────────────────
+app.use((req, res, next) => {
+  if (env.NODE_ENV !== "test") {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - Origin: ${req.headers.origin || "None"}`);
+  }
+  next();
+});
 
 // ─── Better Auth Handler ────────────────────────
 app.all("/api/auth/*", authLimiter, toNodeHandler(auth));
