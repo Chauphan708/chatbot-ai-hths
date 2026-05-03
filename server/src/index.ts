@@ -64,6 +64,22 @@ app.options("*", (req, res) => {
 
 app.use(globalLimiter);
 
+app.get("/api/db-check", async (_req, res) => {
+  try {
+    const { db } = await import("./db/index.js");
+    const { users } = await import("./db/schema.js");
+    const { count } = await import("drizzle-orm");
+    const [result] = await db.select({ value: count() }).from(users);
+    res.json({
+      success: true,
+      userCount: result.value,
+      dbUrl: process.env.DATABASE_URL ? `${process.env.DATABASE_URL.slice(0, 20)}...` : "not set"
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
 // ─── Request Logger ─────────────────────────────
 app.use((req, res, next) => {
   if (env.NODE_ENV !== "test") {
