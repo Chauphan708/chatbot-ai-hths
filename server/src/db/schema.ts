@@ -128,6 +128,8 @@ export const chatbots = pgTable(
     maxDailyChats: integer("max_daily_chats").notNull().default(10),
     isPublic: boolean("is_public").notNull().default(false),
     isActive: boolean("is_active").notNull().default(true),
+    classId: text("class_id")
+      .references(() => classes.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -368,6 +370,71 @@ export const studentInsightsRelations = relations(
     }),
   })
 );
+
+// ─── Classes & Members ────────────────────────────────
+// GV tạo lớp, PH/HS gia nhập và được GV xác minh
+
+export const classes = pgTable(
+  "classes",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    name: varchar("name", { length: 200 }).notNull(),
+    academicYear: varchar("academic_year", { length: 20 }).notNull(), // Ví dụ: "2024-2025"
+    teacherId: text("teacher_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    description: text("description"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("idx_classes_teacher").on(table.teacherId)]
+);
+
+export const classMembers = pgTable(
+  "class_members",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    classId: text("class_id")
+      .notNull()
+      .references(() => classes.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: text("role").notNull(), // "parent" hoặc "student"
+    isVerified: boolean("is_verified").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_class_user_unique").on(table.classId, table.userId),
+    index("idx_class_members_class").on(table.classId),
+    index("idx_class_members_user").on(table.userId),
+  ]
+);
+
+export const classesRelations = relations(classes, ({ one, many }) => ({
+  teacher: one(users, {
+    fields: [classes.teacherId],
+    references: [users.id],
+  }),
+  members: many(classMembers),
+}));
+
+export const classMembersRelations = relations(classMembers, ({ one }) => ({
+  class: one(classes, {
+    fields: [classMembers.classId],
+    references: [classes.id],
+  }),
+  user: one(users, {
+    fields: [classMembers.userId],
+    references: [users.id],
+  }),
+}));
 
 // ─── Better Auth Sessions & Accounts ──────────────────
 // Better Auth manages its own tables, but we define them

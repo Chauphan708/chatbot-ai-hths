@@ -14,6 +14,7 @@ import { TeacherDashboard } from "./pages/teacher/TeacherDashboard";
 import { BotCreatePage } from "./pages/teacher/BotCreatePage";
 import { BotDetailPage } from "./pages/teacher/BotDetailPage";
 import { AnalyticsPage } from "./pages/teacher/AnalyticsPage";
+import { ClassManagementPage } from "./pages/teacher/ClassManagementPage";
 import { ParentDashboard } from "./pages/parent/ParentDashboard";
 import { AddChildPage } from "./pages/parent/AddChildPage";
 import { ChildHistoryPage } from "./pages/parent/ChildHistoryPage";
@@ -83,6 +84,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["teacher"]}>
                 <AnalyticsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/teacher/classes"
+            element={
+              <ProtectedRoute allowedRoles={["teacher"]}>
+                <ClassManagementPage />
               </ProtectedRoute>
             }
           />

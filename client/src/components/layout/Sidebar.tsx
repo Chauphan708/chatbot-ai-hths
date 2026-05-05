@@ -30,10 +30,10 @@ interface NavItem {
 
 const teacherNav: NavItem[] = [
   { label: "Tổng quan", path: "/teacher", icon: LayoutDashboard },
+  { label: "Lớp học", path: "/teacher/classes", icon: Users },
   { label: "Chatbots", path: "/teacher/bots", icon: Bot },
   { label: "Dữ liệu", path: "/teacher/training", icon: Database },
   { label: "Phân tích", path: "/teacher/analytics", icon: BarChart3 },
-  { label: "Chia sẻ", path: "/teacher/share", icon: Share2 },
 ];
 
 const parentNav: NavItem[] = [

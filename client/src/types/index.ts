@@ -51,6 +51,7 @@ export interface Chatbot {
   maxDailyChats: number;
   isPublic: boolean;
   isActive: boolean;
+  classId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -64,6 +65,7 @@ export interface CreateChatbotPayload {
   scaffoldingDefault?: number;
   enableSixHats?: boolean;
   maxDailyChats?: number;
+  classId?: string | null;
 }
 
 export interface UpdateChatbotPayload extends Partial<CreateChatbotPayload> {

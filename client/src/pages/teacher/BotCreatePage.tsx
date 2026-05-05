@@ -16,6 +16,7 @@ const grades = [1, 2, 3, 4, 5];
 export function BotCreatePage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [classes, setClasses] = useState<any[]>([]);
   const [form, setForm] = useState({
     name: "",
     subject: "Toán",
@@ -25,6 +26,13 @@ export function BotCreatePage() {
     scaffoldingDefault: 1,
     enableSixHats: false,
     maxDailyChats: 10,
+    classId: "",
+  });
+
+  useState(() => {
+    import("../../services/classApi").then(({ classApi }) => {
+      classApi.listClasses().then(res => setClasses(res.data || []));
+    });
   });
 
   const handleSubmit = async (e: FormEvent) => {
@@ -78,7 +86,7 @@ export function BotCreatePage() {
 
           {/* Grade select */}
           <div className="input-group">
-            <label className="input-group__label">Lớp</label>
+            <label className="input-group__label">Khối lớp</label>
             <select
               className="input-group__input"
               value={form.gradeLevel}
@@ -86,6 +94,21 @@ export function BotCreatePage() {
             >
               {grades.map((g) => (
                 <option key={g} value={g}>Lớp {g}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Class select */}
+          <div className="input-group">
+            <label className="input-group__label">Gán vào lớp (để kiểm soát truy cập)</label>
+            <select
+              className="input-group__input"
+              value={form.classId}
+              onChange={(e) => setForm({ ...form, classId: e.target.value })}
+            >
+              <option value="">Không gán (Công khai nếu bật Public)</option>
+              {classes.map((c: any) => (
+                <option key={c.id} value={c.id}>{c.name} ({c.academicYear})</option>
               ))}
             </select>
           </div>

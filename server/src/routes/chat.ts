@@ -15,6 +15,7 @@ import {
   chatMessages,
   dailyUsage,
   studentInsights,
+  classMembers,
 } from "../db/schema.js";
 import {
   requireAuth,
@@ -62,6 +63,34 @@ router.post(
 
     if (!bot) {
       throw new AppError(404, "Chatbot không tồn tại hoặc đã bị tắt");
+    }
+
+    // ─── Kiểm tra quyền truy cập (Xác minh lớp học) ───
+    if (!bot.isPublic) {
+      if (!bot.classId) {
+        // Nếu bot không công khai và không gán vào lớp nào, 
+        // mặc định chỉ GV tạo ra nó mới dùng được (hoặc cần gán lớp)
+        if (req.user!.role !== "teacher" || bot.teacherId !== req.user!.id) {
+           throw new AppError(403, "Chatbot này yêu cầu tham gia lớp học để sử dụng");
+        }
+      } else {
+        // Kiểm tra xem HS/PH có trong lớp và đã được xác minh chưa
+        const membership = await db.query.classMembers.findFirst({
+          where: and(
+            eq(classMembers.classId, bot.classId),
+            eq(classMembers.userId, studentId)
+          ),
+        });
+
+        if (!membership || !membership.isVerified) {
+          throw new AppError(
+            403, 
+            !membership 
+              ? "Em cần tham gia lớp học để sử dụng chatbot này" 
+              : "Tài khoản của em đang chờ Giáo viên xác minh quyền truy cập"
+          );
+        }
+      }
     }
 
     // Content Filter (Safety check)

@@ -24,6 +24,13 @@ export function BotDetailPage() {
   const [showAddData, setShowAddData] = useState(false);
   const [newData, setNewData] = useState({ title: "", content: "" });
   const [addingData, setAddingData] = useState(false);
+  const [classes, setClasses] = useState<any[]>([]);
+
+  useEffect(() => {
+    import("../../services/classApi").then(({ classApi }) => {
+      classApi.listClasses().then(res => setClasses(res.data || []));
+    });
+  }, []);
 
   useEffect(() => {
     if (!botId) return;
@@ -56,6 +63,7 @@ export function BotDetailPage() {
         scaffoldingDefault: bot.scaffoldingDefault,
         enableSixHats: bot.enableSixHats,
         maxDailyChats: bot.maxDailyChats,
+        classId: bot.classId || null,
       });
       showToast("Đã lưu thay đổi", "success");
     } catch {
@@ -161,6 +169,19 @@ export function BotDetailPage() {
             value={bot.name}
             onChange={(e) => setBot({ ...bot, name: e.target.value })}
           />
+          <div className="input-group">
+            <label className="input-group__label">Lớp học sở hữu</label>
+            <select
+              className="input-group__input"
+              value={bot.classId || ""}
+              onChange={(e) => setBot({ ...bot, classId: e.target.value })}
+            >
+              <option value="">Không gán (Công khai)</option>
+              {classes.map((c: any) => (
+                <option key={c.id} value={c.id}>{c.name} ({c.academicYear})</option>
+              ))}
+            </select>
+          </div>
           <Textarea
             label="System Prompt"
             value={bot.systemPrompt || ""}

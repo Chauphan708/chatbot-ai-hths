@@ -7,7 +7,7 @@
 
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { bearer } from "better-auth/plugins";
+import { bearer, admin } from "better-auth/plugins";
 import { db } from "../db/index.js";
 import { env } from "../config/env.js";
 import * as schema from "../db/schema.js";
@@ -27,7 +27,8 @@ export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
 
   plugins: [
-    bearer()
+    bearer(),
+    admin()
   ],
 
   emailAndPassword: {

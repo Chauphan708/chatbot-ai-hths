@@ -6,18 +6,25 @@ import { Router } from "express";
 import { z } from "zod";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { db } from "../db/index.js";
-import { chatbots, trainingData, chatSessions, studentInsights, studentProgress, users } from "../db/schema.js";
-import { embedAllForChatbot } from "../services/rag/index.js";
-import {
-  requireAuth,
-  requireRole,
-  validateBody,
-  validateParams,
-  uuidParamSchema,
-  asyncHandler,
-  AppError,
-  getParam,
+import { 
+    chatbots, 
+    trainingData, 
+    chatSessions, 
+    studentInsights, 
+    users,
+    classMembers 
+} from "../db/schema.js";
+import { 
+  requireAuth, 
+  requireRole, 
+  validateBody, 
+  validateParams, 
+  uuidParamSchema, 
+  asyncHandler, 
+  AppError, 
+  getParam 
 } from "../middleware/index.js";
+import { auth } from "../auth/index.js";
 
 const router = Router();
 
@@ -27,19 +34,25 @@ router.use(requireAuth, requireRole("teacher"));
 // ─── Validation Schemas ─────────────────────────
 
 const createBotSchema = z.object({
-  name: z.string().min(1).max(200),
-  subject: z.string().min(1).max(50),
-  gradeLevel: z.number().int().min(1).max(12).default(4),
-  systemPrompt: z.string().max(5000).optional(),
-  botPersona: z.string().max(2000).optional(),
-  scaffoldingDefault: z.number().int().min(1).max(5).default(1),
+  name: z.string().min(3).max(50),
+  subject: z.string(),
+  gradeLevel: z.number().min(1).max(12),
+  systemPrompt: z.string().optional(),
+  botPersona: z.string().optional(),
+  scaffoldingDefault: z.number().min(1).max(5).default(1),
   enableSixHats: z.boolean().default(false),
-  maxDailyChats: z.number().int().min(1).max(50).default(10),
+  maxDailyChats: z.number().min(1).max(100).default(10),
+  classId: z.string().uuid().nullable().optional(),
 });
 
 const updateBotSchema = createBotSchema.partial();
 
-// ─── Generate unique share code ─────────────────
+const createTrainingDataSchema = z.object({
+  title: z.string().min(3).max(100),
+  content: z.string().min(10),
+});
+
+// ─── Helpers ────────────────────────────────────
 
 function generateShareCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I,O,0,1
@@ -103,15 +116,38 @@ router.get(
 
     if (!bot) throw new AppError(404, "Không tìm thấy chatbot");
 
-    // Get training data count
-    const data = await db
+    // Get insights (students needing support)
+    const insights = await db
+      .select({
+        insight: studentInsights,
+        studentName: users.name,
+        studentEmail: users.email,
+      })
+      .from(studentInsights)
+      .innerJoin(users, eq(studentInsights.studentId, users.id))
+      .where(eq(studentInsights.chatbotId, bot.id))
+      .orderBy(desc(studentInsights.errorCount));
+
+    // Get session stats
+    const sessions = await db
       .select()
-      .from(trainingData)
-      .where(eq(trainingData.chatbotId, bot.id));
+      .from(chatSessions)
+      .where(eq(chatSessions.chatbotId, bot.id));
+
+    const uniqueStudents = new Set(sessions.map((s) => s.studentId)).size;
+    const totalMessages = sessions.reduce((acc, s) => acc + s.messagesCount, 0);
 
     res.json({
       success: true,
-      data: { ...bot, trainingDataCount: data.length },
+      data: {
+        ...bot,
+        stats: {
+          uniqueStudents,
+          totalMessages,
+          needsSupport: insights.filter((i) => i.insight.needsSupport).length,
+        },
+        insights,
+      },
     });
   })
 );
@@ -139,126 +175,11 @@ router.put(
   })
 );
 
-/** DELETE /teacher/bots/:id — Xóa bot */
-router.delete(
-  "/bots/:id",
-  validateParams(uuidParamSchema),
-  asyncHandler(async (req, res) => {
-    const [deleted] = await db
-      .delete(chatbots)
-      .where(
-        and(
-          eq(chatbots.id, getParam(req, "id")),
-          eq(chatbots.teacherId, req.user!.id)
-        )
-      )
-      .returning();
-
-    if (!deleted) throw new AppError(404, "Không tìm thấy chatbot");
-
-    res.json({ success: true, message: "Đã xóa chatbot" });
-  })
-);
-
-/** GET /teacher/bots/:id/analytics — Phân tích HS */
+/** GET /teacher/bots/:id/sessions — Lịch sử chat của bot */
 router.get(
-  "/bots/:id/analytics",
+  "/bots/:id/sessions",
   validateParams(uuidParamSchema),
   asyncHandler(async (req, res) => {
-    // Verify bot ownership
-    const [bot] = await db
-      .select()
-      .from(chatbots)
-      .where(
-        and(
-          eq(chatbots.id, getParam(req, "id")),
-          eq(chatbots.teacherId, req.user!.id)
-        )
-      );
-
-    if (!bot) throw new AppError(404, "Không tìm thấy chatbot");
-
-    // Get insights (students needing support)
-    const insights = await db
-      .select({
-        insight: studentInsights,
-        studentName: users.name,
-        studentEmail: users.email,
-      })
-      .from(studentInsights)
-      .innerJoin(users, eq(studentInsights.studentId, users.id))
-      .where(eq(studentInsights.chatbotId, bot.id))
-      .orderBy(desc(studentInsights.errorCount));
-
-    // Get session stats
-    const sessions = await db
-      .select()
-      .from(chatSessions)
-      .where(eq(chatSessions.chatbotId, bot.id));
-
-    const uniqueStudents = new Set(sessions.map((s) => s.studentId)).size;
-    const totalMessages = sessions.reduce(
-      (acc, s) => acc + s.messagesCount,
-      0
-    );
-
-    // Get gamification leaderboard for this bot's students
-    const studentIds = Array.from(new Set(sessions.map((s) => s.studentId)));
-    
-    let leaderboard: any[] = [];
-    if (studentIds.length > 0) {
-      // Find top students by XP who have interacted with this bot
-      // Since studentProgress is global per student, we just show their global progress
-      // but only for students who used this bot.
-      
-      const inClause = studentIds.map(id => `'${id}'`).join(',');
-      const topStudents = await db.execute(sql`
-        SELECT 
-          u.name as "studentName", 
-          sp.total_xp as "totalXp", 
-          sp.level, 
-          sp.streak_days as "streakDays"
-        FROM student_progress sp
-        JOIN users u ON u.id = sp.student_id
-        WHERE sp.student_id IN (${sql.raw(inClause)})
-        ORDER BY sp.total_xp DESC
-        LIMIT 10
-      `);
-      leaderboard = topStudents.rows;
-    }
-
-    res.json({
-      success: true,
-      data: {
-        overview: {
-          totalStudents: uniqueStudents,
-          totalSessions: sessions.length,
-          totalMessages,
-        },
-        insights,
-        leaderboard,
-      },
-    });
-  })
-);
-
-/** GET /teacher/bots/:id/chats — Xem toàn bộ chat HS */
-router.get(
-  "/bots/:id/chats",
-  validateParams(uuidParamSchema),
-  asyncHandler(async (req, res) => {
-    const [bot] = await db
-      .select()
-      .from(chatbots)
-      .where(
-        and(
-          eq(chatbots.id, getParam(req, "id")),
-          eq(chatbots.teacherId, req.user!.id)
-        )
-      );
-
-    if (!bot) throw new AppError(404, "Không tìm thấy chatbot");
-
     const sessions = await db
       .select({
         session: chatSessions,
@@ -266,7 +187,7 @@ router.get(
       })
       .from(chatSessions)
       .innerJoin(users, eq(chatSessions.studentId, users.id))
-      .where(eq(chatSessions.chatbotId, bot.id))
+      .where(eq(chatSessions.chatbotId, getParam(req, "id")))
       .orderBy(desc(chatSessions.startedAt))
       .limit(50);
 
@@ -279,7 +200,6 @@ router.post(
   "/bots/:id/clone",
   validateParams(uuidParamSchema),
   asyncHandler(async (req, res) => {
-    // Source bot can be any public bot or shared with code
     const [sourceBot] = await db
       .select()
       .from(chatbots)
@@ -287,7 +207,6 @@ router.post(
 
     if (!sourceBot) throw new AppError(404, "Không tìm thấy chatbot gốc");
 
-    // Clone bot
     const newShareCode = generateShareCode();
     const [clonedBot] = await db
       .insert(chatbots)
@@ -301,12 +220,10 @@ router.post(
         scaffoldingDefault: sourceBot.scaffoldingDefault,
         enableSixHats: sourceBot.enableSixHats,
         shareCode: newShareCode,
-        cloneFromId: sourceBot.id,
-        maxDailyChats: sourceBot.maxDailyChats,
       })
       .returning();
 
-    // Clone training data (without embeddings — regenerate later)
+    // Clone training data
     const sourceData = await db
       .select()
       .from(trainingData)
@@ -320,13 +237,9 @@ router.post(
           content: d.content,
           commonMistakes: d.commonMistakes,
           scaffoldingHints: d.scaffoldingHints,
+          embedding: d.embedding,
         }))
       );
-
-      // Auto re-embed in background
-      embedAllForChatbot(clonedBot.id).catch((err) => {
-        console.error(`Failed to re-embed cloned bot ${clonedBot.id}:`, err);
-      });
     }
 
     res.status(201).json({
@@ -363,6 +276,52 @@ router.get(
         shareLink,
         cloneLink: `${process.env.CLIENT_URL}/clone/${bot.shareCode}`,
       },
+    });
+  })
+);
+
+/** ─── NEW: User Management by Teacher ─── */
+
+/** POST /teacher/create-user — GV tạo tài khoản cho PH/HS */
+router.post(
+  "/create-user",
+  asyncHandler(async (req, res) => {
+    const { name, email, password, role, classId } = req.body;
+
+    if (!name || !email || !password || !role || !classId) {
+      throw new AppError(400, "Thiếu thông tin bắt buộc");
+    }
+
+    if (!["parent", "student"].includes(role)) {
+      throw new AppError(400, "Vai trò không hợp lệ");
+    }
+
+    // 1. Tạo user bằng Better Auth (Server-side API)
+    const newUser = await auth.api.createUser({
+      body: {
+        email,
+        password,
+        name,
+        role,
+      },
+    });
+
+    if (!newUser) {
+      throw new AppError(500, "Lỗi khi tạo tài khoản");
+    }
+
+    // 2. Tự động thêm vào lớp và Đã xác minh (vì GV tạo)
+    await db.insert(classMembers).values({
+      classId,
+      userId: newUser.user.id,
+      role: role,
+      isVerified: true,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Tạo tài khoản thành công",
+      data: newUser.user,
     });
   })
 );
