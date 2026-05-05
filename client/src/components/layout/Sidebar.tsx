@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   Database,
   BarChart3,
-  Share2,
   Users,
   History,
   LogOut,

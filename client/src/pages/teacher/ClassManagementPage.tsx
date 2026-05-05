@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Plus, Users, CheckCircle, Clock, UserPlus, Trash2 } from "lucide-react";
-import { GlassCard, Button, Badge, Spinner, Input } from "../../components/ui";
+import { Plus, Users, CheckCircle, Clock, UserPlus } from "lucide-react";
+import { GlassCard, Button, Badge, Spinner, Input, showToast } from "../../components/ui";
 import { DashboardLayout } from "../../components/layout/Sidebar";
 import { classApi } from "../../services/classApi";
-import { toast } from "react-hot-toast";
 
 interface ClassRoom {
   id: string;
@@ -55,7 +54,7 @@ export function ClassManagementPage() {
         loadMembers(res.data[0].id);
       }
     } catch (err) {
-      toast.error("Lỗi khi tải danh sách lớp");
+      showToast("Lỗi khi tải danh sách lớp", "error");
     } finally {
       setLoading(false);
     }
@@ -67,22 +66,22 @@ export function ClassManagementPage() {
       const res = await classApi.listMembers(classId);
       setMembers(res.data || []);
     } catch (err) {
-      toast.error("Lỗi khi tải danh sách thành viên");
+      showToast("Lỗi khi tải danh sách thành viên", "error");
     } finally {
       setLoadingMembers(false);
     }
   };
 
   const handleCreateClass = async () => {
-    if (!className) return toast.error("Vui lòng nhập tên lớp");
+    if (!className) return showToast("Vui lòng nhập tên lớp", "error");
     try {
       await classApi.createClass({ name: className, academicYear });
-      toast.success("Tạo lớp thành công");
+      showToast("Tạo lớp thành công", "success");
       setShowCreateClass(false);
       setClassName("");
       loadClasses();
     } catch (err) {
-      toast.error("Lỗi khi tạo lớp");
+      showToast("Lỗi khi tạo lớp", "error");
     }
   };
 
@@ -90,16 +89,16 @@ export function ClassManagementPage() {
     if (!selectedClass) return;
     try {
       await classApi.verifyMember(selectedClass.id, userId, isVerified);
-      toast.success(isVerified ? "Đã xác minh" : "Đã hủy xác minh");
+      showToast(isVerified ? "Đã xác minh" : "Đã hủy xác minh", "success");
       loadMembers(selectedClass.id);
     } catch (err) {
-      toast.error("Lỗi khi thực hiện");
+      showToast("Lỗi khi thực hiện", "error");
     }
   };
 
   const handleCreateUser = async () => {
     if (!selectedClass) return;
-    if (!newUserName || !newUserEmail) return toast.error("Vui lòng nhập đủ thông tin");
+    if (!newUserName || !newUserEmail) return showToast("Vui lòng nhập đủ thông tin", "error");
     try {
       await classApi.teacherCreateUser({
         name: newUserName,
@@ -108,13 +107,13 @@ export function ClassManagementPage() {
         role: newUserRole,
         classId: selectedClass.id
       });
-      toast.success(`Đã tạo tài khoản cho ${newUserRole === 'parent' ? 'Phụ huynh' : 'Học sinh'}`);
+      showToast(`Đã tạo tài khoản cho ${newUserRole === 'parent' ? 'Phụ huynh' : 'Học sinh'}`, "success");
       setShowCreateUser(false);
       setNewUserName("");
       setNewUserEmail("");
       loadMembers(selectedClass.id);
     } catch (err) {
-      toast.error("Lỗi khi tạo tài khoản");
+      showToast("Lỗi khi tạo tài khoản", "error");
     }
   };
 
@@ -163,16 +162,19 @@ export function ClassManagementPage() {
           {loading ? <Spinner size="md" className="mx-auto my-8" /> : (
             <div className="flex flex-col gap-2">
               {classes.map(c => (
-                <GlassCard 
-                  key={c.id} 
-                  padding="sm" 
-                  hover 
-                  className={`cursor-pointer transition-all ${selectedClass?.id === c.id ? 'border-primary' : ''}`}
+                <div
+                  key={c.id}
                   onClick={() => {
                     setSelectedClass(c);
                     loadMembers(c.id);
                   }}
+                  className="cursor-pointer"
                 >
+                  <GlassCard 
+                    padding="sm" 
+                    hover 
+                    className={`transition-all ${selectedClass?.id === c.id ? 'border-primary' : ''}`}
+                  >
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="font-semibold">{c.name}</div>
@@ -180,7 +182,8 @@ export function ClassManagementPage() {
                     </div>
                     <Users size={16} className="text-secondary opacity-50" />
                   </div>
-                </GlassCard>
+                  </GlassCard>
+                </div>
               ))}
               {classes.length === 0 && !showCreateClass && (
                 <p className="text-center text-secondary py-8">Chưa có lớp nào</p>
@@ -208,7 +211,7 @@ export function ClassManagementPage() {
               </div>
 
               {/* Members Table */}
-              <GlassCard padding="none" className="overflow-hidden">
+              <GlassCard padding="sm" className="overflow-hidden" style={{ padding: 0 }}>
                 <table className="w-full text-left">
                   <thead className="bg-glass-white/5 border-b border-glass-border">
                     <tr>
@@ -233,7 +236,7 @@ export function ClassManagementPage() {
                         <td className="px-4 py-4">{m.user.name}</td>
                         <td className="px-4 py-4 text-secondary text-sm">{m.user.email}</td>
                         <td className="px-4 py-4">
-                          <Badge variant={m.role === 'parent' ? 'accent' : 'primary'}>
+                          <Badge variant={m.role === 'parent' ? 'info' : 'default'}>
                             {m.role === 'parent' ? 'Phụ huynh' : 'Học sinh'}
                           </Badge>
                         </td>
@@ -250,11 +253,11 @@ export function ClassManagementPage() {
                         </td>
                         <td className="px-4 py-4">
                           {m.isVerified ? (
-                            <Button size="xs" variant="ghost" onClick={() => handleVerify(m.userId, false)}>
+                            <Button size="sm" variant="ghost" onClick={() => handleVerify(m.userId, false)}>
                               Hủy duyệt
                             </Button>
                           ) : (
-                            <Button size="xs" variant="success" onClick={() => handleVerify(m.userId, true)}>
+                            <Button size="sm" variant="primary" onClick={() => handleVerify(m.userId, true)}>
                               Duyệt ngay
                             </Button>
                           )}
