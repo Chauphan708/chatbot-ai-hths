@@ -13,8 +13,9 @@ declare global {
       user?: {
         id: string;
         email: string;
-        role: "teacher" | "parent" | "student";
+        role: "teacher" | "parent" | "student" | "admin";
         name: string;
+        isVerified: boolean;
       };
       session?: {
         id: string;
@@ -52,6 +53,7 @@ export async function requireAuth(
       email: session.user.email,
       role: (session.user as any).role ?? "student",
       name: session.user.name,
+      isVerified: (session.user as any).isVerified ?? true,
     };
     req.session = {
       id: session.session.id,
@@ -73,7 +75,7 @@ export async function requireAuth(
 /**
  * Middleware factory: Require specific role(s)
  */
-export function requireRole(...roles: Array<"teacher" | "parent" | "student">) {
+export function requireRole(...roles: Array<"teacher" | "parent" | "student" | "admin">) {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
       res.status(401).json({
@@ -83,10 +85,24 @@ export function requireRole(...roles: Array<"teacher" | "parent" | "student">) {
       return;
     }
 
-    if (!roles.includes(req.user.role)) {
+    // Admin có quyền truy cập tất cả
+    if (req.user.role === "admin") {
+      return next();
+    }
+
+    if (!roles.includes(req.user.role as any)) {
       res.status(403).json({
         success: false,
         error: `Forbidden — Cần quyền: ${roles.join(" hoặc ")}`,
+      });
+      return;
+    }
+
+    // Kiểm tra xác minh cho Giáo viên
+    if (req.user.role === "teacher" && !req.user.isVerified) {
+      res.status(403).json({
+        success: false,
+        error: "Tài khoản Giáo viên chưa được Admin phê duyệt",
       });
       return;
     }

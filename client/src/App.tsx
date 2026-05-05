@@ -19,6 +19,8 @@ import { ParentDashboard } from "./pages/parent/ParentDashboard";
 import { AddChildPage } from "./pages/parent/AddChildPage";
 import { ChildHistoryPage } from "./pages/parent/ChildHistoryPage";
 import { StudentChatPage } from "./pages/student/StudentChatPage";
+import { AdminDashboard } from "./pages/admin/AdminDashboard";
+import { ConversationDetail } from "./pages/admin/ConversationDetail";
 
 // Styles
 import "./pages/pages.css";
@@ -34,6 +36,7 @@ function HomeRedirect() {
       teacher: "/teacher",
       parent: "/parent",
       student: "/student",
+      admin: "/admin",
     } as const;
     return <Navigate to={dashboardMap[user.role]} replace />;
   }
@@ -134,6 +137,24 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["parent"]}>
                 <ParentDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Admin (protected) */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/conversations/:id"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <ConversationDetail />
               </ProtectedRoute>
             }
           />

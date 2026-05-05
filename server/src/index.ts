@@ -8,7 +8,7 @@ import helmet from "helmet";
 import { toNodeHandler } from "better-auth/node";
 import { env, envErrors } from "./config/env.js";
 import { auth } from "./auth/index.js";
-import { teacherRouter, parentRouter, chatRouter, trainingRouter, classRouter } from "./routes/index.js";
+import { teacherRouter, parentRouter, chatRouter, trainingRouter, classRouter, adminRouter } from "./routes/index.js";
 import { errorHandler, globalLimiter, authLimiter } from "./middleware/index.js";
 
 const app = express();
@@ -76,6 +76,7 @@ app.use("/api/parent", parentRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/training", trainingRouter);
 app.use("/api/classes", classRouter);
+app.use("/api/admin", adminRouter);
 
 // ─── 404 ────────────────────────────────────────
 app.use((_req, res) => {

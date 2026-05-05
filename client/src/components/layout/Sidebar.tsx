@@ -15,6 +15,8 @@ import {
   ChevronLeft,
   Moon,
   Sun,
+  ShieldCheck,
+  MessageSquare,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
@@ -39,6 +41,12 @@ const parentNav: NavItem[] = [
   { label: "Tổng quan", path: "/parent", icon: LayoutDashboard },
   { label: "Con em", path: "/parent/children", icon: Users },
   { label: "Lịch sử", path: "/parent/history", icon: History },
+];
+
+const adminNav: NavItem[] = [
+  { label: "Tổng quan", path: "/admin", icon: LayoutDashboard },
+  { label: "Giáo viên", path: "/admin/teachers", icon: ShieldCheck },
+  { label: "Hội thoại", path: "/admin/conversations", icon: MessageSquare },
 ];
 
 interface SidebarProps {
@@ -75,7 +83,11 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   };
 
   const navItems: NavItem[] =
-    user?.role === "teacher" ? teacherNav : parentNav;
+    user?.role === "admin"
+      ? adminNav
+      : user?.role === "teacher"
+      ? teacherNav
+      : parentNav;
 
   const handleLogout = async () => {
     await logout();
@@ -135,7 +147,11 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
             <div className="sidebar__user-info">
               <span className="sidebar__user-name">{user.name}</span>
               <span className="sidebar__user-role">
-                {user.role === "teacher" ? "Giáo viên" : "Phụ huynh"}
+                {user.role === "admin"
+                  ? "Admin"
+                  : user.role === "teacher"
+                  ? "Giáo viên"
+                  : "Phụ huynh"}
               </span>
             </div>
           </div>

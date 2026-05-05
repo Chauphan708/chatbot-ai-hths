@@ -59,6 +59,11 @@ export const auth = betterAuth({
         defaultValue: "student",
         input: true,
       },
+      isVerified: {
+        type: "boolean",
+        required: false,
+        defaultValue: true,
+      }
     },
   },
 

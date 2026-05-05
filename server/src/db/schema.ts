@@ -52,9 +52,10 @@ export const users = pgTable(
     id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
     name: text("name").notNull(),
     email: varchar("email", { length: 255 }).notNull().unique(),
-    role: text("role").notNull().default("student"),
+    role: text("role").notNull().default("student"), // teacher, parent, student, admin
     image: text("image"),
     emailVerified: boolean("email_verified").notNull().default(false),
+    isVerified: boolean("is_verified").notNull().default(true), // Dành cho GV (mặc định true cho HS/PH để không bị block)
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
