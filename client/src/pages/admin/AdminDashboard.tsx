@@ -24,7 +24,7 @@ export function AdminDashboard() {
         adminApi.getConversations()
       ]);
 
-      setStats(statsRes.data);
+      if (statsRes.data) setStats(statsRes.data);
       setTeachers(teachersRes.data || []);
       setConversations(convRes.data || []);
     } catch (err) {

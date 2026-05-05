@@ -19,7 +19,12 @@ export function LoginPage() {
 
   // Redirect if already logged in
   if (isAuthenticated && user && !isLoading) {
-    const dashboardMap = { teacher: "/teacher", parent: "/parent", student: "/student" };
+    const dashboardMap = { 
+      teacher: "/teacher", 
+      parent: "/parent", 
+      student: "/student",
+      admin: "/admin"
+    };
     return <Navigate to={dashboardMap[user.role]} replace />;
   }
 

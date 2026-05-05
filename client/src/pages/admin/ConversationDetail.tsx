@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MessageSquare, Bot, User } from "lucide-react";
+import { ArrowLeft, Bot, User } from "lucide-react";
 import { GlassCard, Button, Spinner, showToast } from "../../components/ui";
 import { DashboardLayout } from "../../components/layout/Sidebar";
 import { adminApi } from "../../services/adminApi";

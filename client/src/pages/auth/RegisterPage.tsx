@@ -26,7 +26,12 @@ export function RegisterPage() {
   const [submitting, setSubmitting] = useState(false);
 
   if (isAuthenticated && user && !isLoading) {
-    const dashboardMap = { teacher: "/teacher", parent: "/parent", student: "/student" };
+    const dashboardMap = { 
+      teacher: "/teacher", 
+      parent: "/parent", 
+      student: "/student",
+      admin: "/admin"
+    };
     return <Navigate to={dashboardMap[user.role]} replace />;
   }
 
@@ -36,7 +41,12 @@ export function RegisterPage() {
     setSubmitting(true);
     try {
       await register({ email, password, name, role });
-      const dashboardMap = { teacher: "/teacher", parent: "/parent", student: "/student" };
+      const dashboardMap = { 
+        teacher: "/teacher", 
+        parent: "/parent", 
+        student: "/student",
+        admin: "/admin"
+      };
       navigate(dashboardMap[role]);
     } catch {
       // Error handled by context

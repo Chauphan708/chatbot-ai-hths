@@ -5,7 +5,7 @@
 
 // ─── User & Auth ──────────────────────────────────────
 
-export type UserRole = "teacher" | "parent" | "student";
+export type UserRole = "teacher" | "parent" | "student" | "admin";
 
 export interface User {
   id: string;
@@ -14,6 +14,7 @@ export interface User {
   name: string;
   image?: string | null;
   emailVerified: boolean;
+  isVerified?: boolean;
   createdAt: string;
 }
 

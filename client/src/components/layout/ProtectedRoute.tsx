@@ -34,6 +34,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
       teacher: "/teacher",
       parent: "/parent",
       student: "/student",
+      admin: "/admin",
     };
     return <Navigate to={dashboardMap[user.role]} replace />;
   }

@@ -1,5 +1,5 @@
-import api from "./api";
-import type { ApiResponse } from "./authApi";
+import { api } from "./api";
+import type { ApiResponse } from "../types";
 
 export interface Teacher {
   id: string;
