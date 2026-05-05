@@ -119,4 +119,62 @@ router.post(
   })
 );
 
+// 6. Cập nhật lớp học
+router.put(
+  "/:id",
+  requireAuth,
+  requireRole("teacher"),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { name, academicYear, description } = req.body;
+
+    // Kiểm tra sở hữu
+    const [existing] = await db
+      .select()
+      .from(classes)
+      .where(and(eq(classes.id, id), eq(classes.teacherId, req.user!.id)));
+
+    if (!existing) {
+      return res.status(404).json({ success: false, error: "Không tìm thấy lớp học" });
+    }
+
+    const [updatedClass] = await db
+      .update(classes)
+      .set({
+        name: name || existing.name,
+        academicYear: academicYear || existing.academicYear,
+        description: description !== undefined ? description : existing.description,
+        updatedAt: new Date(),
+      })
+      .where(eq(classes.id, id))
+      .returning();
+
+    res.json({ success: true, data: updatedClass });
+  })
+);
+
+// 7. Xóa lớp học
+router.delete(
+  "/:id",
+  requireAuth,
+  requireRole("teacher"),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    // Kiểm tra sở hữu
+    const [existing] = await db
+      .select()
+      .from(classes)
+      .where(and(eq(classes.id, id), eq(classes.teacherId, req.user!.id)));
+
+    if (!existing) {
+      return res.status(404).json({ success: false, error: "Không tìm thấy lớp học" });
+    }
+
+    await db.delete(classes).where(eq(classes.id, id));
+
+    res.json({ success: true, message: "Đã xóa lớp học thành công" });
+  })
+);
+
 export default router;

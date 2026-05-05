@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Users, CheckCircle, Clock, UserPlus } from "lucide-react";
+import { Plus, Users, CheckCircle, Clock, UserPlus, Edit2, Trash2 } from "lucide-react";
 import { GlassCard, Button, Badge, Spinner, Input, showToast } from "../../components/ui";
 import { DashboardLayout } from "../../components/layout/Sidebar";
 import { classApi } from "../../services/classApi";
@@ -29,6 +29,7 @@ export function ClassManagementPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [showCreateClass, setShowCreateClass] = useState(false);
+  const [showEditClass, setShowEditClass] = useState(false);
   const [showCreateUser, setShowCreateUser] = useState(false);
 
   // Form states
@@ -82,6 +83,31 @@ export function ClassManagementPage() {
       loadClasses();
     } catch (err) {
       showToast("Lỗi khi tạo lớp", "error");
+    }
+  };
+
+  const handleEditClass = async () => {
+    if (!selectedClass) return;
+    if (!className) return showToast("Vui lòng nhập tên lớp", "error");
+    try {
+      await classApi.updateClass(selectedClass.id, { name: className, academicYear });
+      showToast("Cập nhật lớp thành công", "success");
+      setShowEditClass(false);
+      loadClasses();
+    } catch (err) {
+      showToast("Lỗi khi cập nhật lớp", "error");
+    }
+  };
+
+  const handleDeleteClass = async (id: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa lớp học này? Tất cả thành viên sẽ bị xóa khỏi lớp.")) return;
+    try {
+      await classApi.deleteClass(id);
+      showToast("Đã xóa lớp học", "success");
+      if (selectedClass?.id === id) setSelectedClass(null);
+      loadClasses();
+    } catch (err) {
+      showToast("Lỗi khi xóa lớp học", "error");
     }
   };
 
@@ -142,6 +168,7 @@ export function ClassManagementPage() {
 
           {showCreateClass && (
             <GlassCard padding="md" className="flex flex-col gap-3">
+              <h3 className="font-semibold text-sm">Tạo lớp mới</h3>
               <Input 
                 placeholder="Tên lớp (VD: Lớp 4A)" 
                 value={className}
@@ -155,6 +182,26 @@ export function ClassManagementPage() {
               <div className="flex gap-2">
                 <Button size="sm" fullWidth onClick={handleCreateClass}>Lưu</Button>
                 <Button size="sm" fullWidth variant="ghost" onClick={() => setShowCreateClass(false)}>Hủy</Button>
+              </div>
+            </GlassCard>
+          )}
+
+          {showEditClass && (
+            <GlassCard padding="md" className="flex flex-col gap-3">
+              <h3 className="font-semibold text-sm">Chỉnh sửa lớp</h3>
+              <Input 
+                placeholder="Tên lớp" 
+                value={className}
+                onChange={(e) => setClassName(e.target.value)}
+              />
+              <Input 
+                placeholder="Năm học" 
+                value={academicYear}
+                onChange={(e) => setAcademicYear(e.target.value)}
+              />
+              <div className="flex gap-2">
+                <Button size="sm" fullWidth onClick={handleEditClass}>Cập nhật</Button>
+                <Button size="sm" fullWidth variant="ghost" onClick={() => setShowEditClass(false)}>Hủy</Button>
               </div>
             </GlassCard>
           )}
@@ -180,7 +227,34 @@ export function ClassManagementPage() {
                       <div className="font-semibold">{c.name}</div>
                       <div className="text-xs text-secondary">{c.academicYear}</div>
                     </div>
-                    <Users size={16} className="text-secondary opacity-50" />
+                    <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-1">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          icon={<Edit2 size={12} />} 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setClassName(c.name);
+                            setAcademicYear(c.academicYear);
+                            setSelectedClass(c);
+                            setShowEditClass(true);
+                            setShowCreateClass(false);
+                          }}
+                        />
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-error hover:bg-error/10"
+                          icon={<Trash2 size={12} />} 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteClass(c.id);
+                          }}
+                        />
+                      </div>
+                      <Users size={16} className="text-secondary opacity-50" />
+                    </div>
                   </div>
                   </GlassCard>
                 </div>

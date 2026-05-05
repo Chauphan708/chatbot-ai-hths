@@ -27,4 +27,11 @@ export const classApi = {
     role: "parent" | "student"; 
     classId: string 
   }) => api.post<ApiResponse<any>>("/api/teacher/create-user", data),
+  
+  // Cập nhật lớp
+  updateClass: (id: string, data: { name: string; academicYear: string; description?: string }) => 
+    api.put<ApiResponse<any>>(`/api/classes/${id}`, data),
+    
+  // Xóa lớp
+  deleteClass: (id: string) => api.delete<ApiResponse<any>>(`/api/classes/${id}`),
 };
