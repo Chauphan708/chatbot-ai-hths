@@ -391,7 +391,10 @@ export const classes = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [index("idx_classes_teacher").on(table.teacherId)]
+  (table) => [
+    index("idx_classes_teacher").on(table.teacherId),
+    uniqueIndex("idx_classes_unique_name").on(table.teacherId, table.name, table.academicYear),
+  ]
 );
 
 export const classMembers = pgTable(

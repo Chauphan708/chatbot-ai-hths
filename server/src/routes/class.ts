@@ -21,6 +21,22 @@ router.post(
       return res.status(400).json({ success: false, error: "Thiếu tên lớp hoặc năm học" });
     }
 
+    // Kiểm tra trùng tên và năm học
+    const [duplicate] = await db
+      .select()
+      .from(classes)
+      .where(
+        and(
+          eq(classes.teacherId, req.user!.id),
+          eq(classes.name, name),
+          eq(classes.academicYear, academicYear)
+        )
+      );
+
+    if (duplicate) {
+      return res.status(400).json({ success: false, error: "Lớp học này đã tồn tại trong năm học này" });
+    }
+
     const [newClass] = await db.insert(classes).values({
       name,
       academicYear,
@@ -136,6 +152,27 @@ router.put(
 
     if (!existing) {
       return res.status(404).json({ success: false, error: "Không tìm thấy lớp học" });
+    }
+
+    // Nếu thay đổi tên hoặc năm học, kiểm tra trùng lặp với lớp khác
+    if ((name && name !== existing.name) || (academicYear && academicYear !== existing.academicYear)) {
+      const targetName = name || existing.name;
+      const targetYear = academicYear || existing.academicYear;
+
+      const [duplicate] = await db
+        .select()
+        .from(classes)
+        .where(
+          and(
+            eq(classes.teacherId, req.user!.id),
+            eq(classes.name, targetName),
+            eq(classes.academicYear, targetYear)
+          )
+        );
+
+      if (duplicate && duplicate.id !== id) {
+        return res.status(400).json({ success: false, error: "Tên lớp và năm học này đã được sử dụng cho lớp khác" });
+      }
     }
 
     const [updatedClass] = await db
