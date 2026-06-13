@@ -19,6 +19,7 @@ import {
   teacherQuestsRouter,
   analyticsRouter,
   parentReportsRouter,
+  googleDriveRouter,
 } from "./routes/index.js";
 import { errorHandler, globalLimiter, authLimiter } from "./middleware/index.js";
 import { initReportScheduler } from "./cron/reportScheduler.js";
@@ -93,6 +94,7 @@ app.use("/api/training", trainingRouter);
 app.use("/api/classes", classRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/gamification", gamificationRouter);
+app.use("/api/google-drive", googleDriveRouter);
 
 // ─── 404 ────────────────────────────────────────
 app.use((_req, res) => {

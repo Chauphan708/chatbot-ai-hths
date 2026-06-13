@@ -1,4 +1,3 @@
-import { auth } from "../src/auth/index.js";
 import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,6 +9,7 @@ async function testLogin() {
   console.log("🚀 Testing login for demo teacher account...");
   
   try {
+    const { auth } = await import("../src/auth/index.js");
     const result = await auth.api.signInEmail({
       body: {
         email: "giaovien.demo@gmail.com",

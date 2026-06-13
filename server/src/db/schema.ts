@@ -55,6 +55,9 @@ export const users = pgTable(
     role: text("role").notNull().default("student"), // teacher, parent, student, admin
     image: text("image"),
     geminiApiKey: text("gemini_api_key"), // GV tự điền API key Gemini riêng
+    googleAccessToken: text("google_access_token"), // Token Google Drive
+    googleRefreshToken: text("google_refresh_token"), // Refresh Token Google Drive
+    googleTokenExpiresAt: timestamp("google_token_expires_at", { withTimezone: true }), // Hạn token
     emailVerified: boolean("email_verified").notNull().default(false),
     isVerified: boolean("is_verified").notNull().default(true), // Dành cho GV (mặc định true cho HS/PH để không bị block)
     createdAt: timestamp("created_at", { withTimezone: true })

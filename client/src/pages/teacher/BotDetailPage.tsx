@@ -5,13 +5,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, Save, Database, Plus, Trash2, Share2, RefreshCw,
+  ArrowLeft, Save, Database, Plus, Trash2, Share2, RefreshCw, Cloud, Folder, File, ArrowUpRight, FolderOpen
 } from "lucide-react";
 import {
   GlassCard, Button, Input, Textarea, Badge, Spinner, Modal, showToast,
 } from "../../components/ui";
 import { DashboardLayout } from "../../components/layout/Sidebar";
 import { teacherApi } from "../../services/teacherApi";
+import { driveApi, type DriveFile } from "../../services/driveApi";
 import type { Chatbot, TrainingDataItem } from "../../types";
 
 export function BotDetailPage() {
@@ -25,6 +26,14 @@ export function BotDetailPage() {
   const [newData, setNewData] = useState({ title: "", content: "" });
   const [addingData, setAddingData] = useState(false);
   const [classes, setClasses] = useState<any[]>([]);
+
+  // Google Drive Integration states
+  const [showDrivePicker, setShowDrivePicker] = useState(false);
+  const [driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
+  const [loadingDrive, setLoadingDrive] = useState(false);
+  const [currentFolderId, setCurrentFolderId] = useState("root");
+  const [folderHistory, setFolderHistory] = useState<string[]>([]);
+  const [importingFileId, setImportingFileId] = useState<string | null>(null);
 
   useEffect(() => {
     import("../../services/classApi").then(({ classApi }) => {
@@ -125,6 +134,73 @@ export function BotDetailPage() {
     }
   };
 
+  // Google Drive operations
+  const handleOpenDrive = async () => {
+    try {
+      setLoading(true);
+      const statusRes = await driveApi.getStatus();
+      if (!statusRes.data?.isConnected) {
+        // Get auth Url and redirect
+        const urlRes = await driveApi.getAuthUrl();
+        if (urlRes.data?.url) {
+          window.location.href = urlRes.data.url;
+        } else {
+          showToast("Không tạo được liên kết Google OAuth", "error");
+        }
+        return;
+      }
+      setShowDrivePicker(true);
+      loadFolder("root");
+    } catch (err) {
+      showToast("Lỗi kiểm tra Google Drive", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadFolder = async (folderId: string) => {
+    setLoadingDrive(true);
+    try {
+      const res = await driveApi.listFiles(folderId);
+      setDriveFiles(res.data || []);
+      setCurrentFolderId(folderId);
+    } catch {
+      showToast("Lỗi tải danh sách tệp", "error");
+    } finally {
+      setLoadingDrive(false);
+    }
+  };
+
+  const handleFolderClick = (folderId: string) => {
+    setFolderHistory((prev) => [...prev, currentFolderId]);
+    loadFolder(folderId);
+  };
+
+  const handleBackFolder = () => {
+    if (folderHistory.length === 0) return;
+    const prevFolder = folderHistory[folderHistory.length - 1];
+    setFolderHistory((prev) => prev.slice(0, -1));
+    loadFolder(prevFolder);
+  };
+
+  const handleImportFile = async (fileId: string, mimeType: string) => {
+    if (!botId) return;
+    setImportingFileId(fileId);
+    try {
+      const res = await driveApi.importFile({ fileId, mimeType, chatbotId: botId });
+      if (res.data) {
+        showToast("Đã nhập tài liệu thành công!", "success");
+        // Reload training data list
+        const dataRes = await teacherApi.listTrainingData(botId);
+        setTrainingData(dataRes.data || []);
+      }
+    } catch (err: any) {
+      showToast(err.message || "Lỗi khi nhập tệp", "error");
+    } finally {
+      setImportingFileId(null);
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout role="teacher">
@@ -216,6 +292,9 @@ export function BotDetailPage() {
             <Button size="sm" variant="secondary" onClick={handleEmbedAll} icon={<RefreshCw size={14} />}>
               Embed
             </Button>
+            <Button size="sm" variant="secondary" onClick={handleOpenDrive} icon={<Cloud size={14} />}>
+              Drive
+            </Button>
             <Button size="sm" onClick={() => setShowAddData(true)} icon={<Plus size={14} />}>
               Thêm
             </Button>
@@ -271,6 +350,90 @@ export function BotDetailPage() {
           <Button onClick={handleAddData} loading={addingData} fullWidth icon={<Plus size={16} />}>
             Thêm dữ liệu
           </Button>
+        </div>
+      </Modal>
+
+      {/* Google Drive Picker Modal */}
+      <Modal isOpen={showDrivePicker} onClose={() => setShowDrivePicker(false)} title="Google Drive File Picker">
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)", minHeight: 350 }}>
+          {/* Header & Back Button */}
+          <div className="flex items-center justify-between" style={{ paddingBottom: "var(--space-3)", borderBottom: "1px solid var(--border-color)" }}>
+            <div className="flex items-center gap-2">
+              <FolderOpen size={18} />
+              <span style={{ fontSize: "var(--text-sm)", fontWeight: 500 }}>
+                {currentFolderId === "root" ? "Thư mục gốc" : "Thư mục con"}
+              </span>
+            </div>
+            {folderHistory.length > 0 && (
+              <Button size="sm" variant="ghost" onClick={handleBackFolder}>
+                Quay lại
+              </Button>
+            )}
+          </div>
+
+          {/* File List */}
+          {loadingDrive ? (
+            <div className="flex justify-center items-center flex-grow" style={{ padding: "var(--space-12)" }}>
+              <Spinner size="md" />
+            </div>
+          ) : driveFiles.length === 0 ? (
+            <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "var(--space-12)" }}>
+              Không tìm thấy tệp phù hợp trong thư mục này.
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", maxHeight: 300, overflowY: "auto", paddingRight: 5 }}>
+              {driveFiles.map((file) => {
+                const isFolder = file.mimeType === "application/vnd.google-apps.folder";
+                const isSupportedFile = 
+                  file.mimeType === "application/vnd.google-apps.document" || 
+                  file.mimeType === "text/plain";
+
+                return (
+                  <div
+                    key={file.id}
+                    className="glass"
+                    style={{
+                      padding: "var(--space-2) var(--space-3)",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      cursor: isFolder ? "pointer" : "default",
+                      transition: "background 0.2s"
+                    }}
+                    onClick={() => isFolder && handleFolderClick(file.id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      {isFolder ? (
+                        <Folder size={18} style={{ color: "var(--color-primary)" }} />
+                      ) : (
+                        <File size={18} style={{ color: "var(--text-muted)" }} />
+                      )}
+                      <span style={{ fontSize: "var(--text-sm)", fontWeight: isFolder ? 500 : 400 }}>
+                        {file.name}
+                      </span>
+                    </div>
+
+                    {!isFolder && isSupportedFile && (
+                      <Button
+                        size="sm"
+                        loading={importingFileId === file.id}
+                        onClick={() => handleImportFile(file.id, file.mimeType)}
+                        icon={<ArrowUpRight size={14} />}
+                      >
+                        Nhập
+                      </Button>
+                    )}
+
+                    {!isFolder && !isSupportedFile && (
+                      <Badge variant="default">
+                        Không hỗ trợ
+                      </Badge>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </Modal>
     </DashboardLayout>

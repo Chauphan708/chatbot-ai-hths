@@ -8,3 +8,4 @@ export { default as gamificationRouter } from "./gamification.js";
 export { default as teacherQuestsRouter } from "./teacherQuests.js";
 export { default as analyticsRouter } from "./analytics.js";
 export { default as parentReportsRouter } from "./parentReports.js";
+export { default as googleDriveRouter } from "./googleDrive.js";
